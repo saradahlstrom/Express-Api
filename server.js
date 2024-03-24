@@ -70,7 +70,7 @@ app.get('/api/blogposts/:id', async (req, res) => {
 app.get('/api/blogposts/category/:category', async (req, res) => {
   const { category } = req.params;
   const blogPosts = await BlogPost.find({ category: category });
-  if (blogPosts.length) {
+  if (blogPost) {
     res.json(blogPosts);
   } else {
     res.status(404).json({ error: 'No blog posts found in this category' });
