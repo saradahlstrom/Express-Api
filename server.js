@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import blogData from './data/blogposts.json';
+import blogData from './data/blogposts.json' assert { type: 'json' };
+
 
 dotenv.config();
 
