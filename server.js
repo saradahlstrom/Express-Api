@@ -4,11 +4,12 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import blogData from './data/blogposts.json' assert { type: 'json' };
 
-
 dotenv.config();
 
 const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost/projectMongo';
-mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('Error connecting to MongoDB:', err));
 
 const port = process.env.PORT || 8080;
 const app = express();
@@ -17,7 +18,6 @@ app.use(cors());
 app.use(express.json());
 
 const blogPostSchema = new mongoose.Schema({
-  id: Number,
   date: String,
   title: String,
   content: String,
@@ -29,14 +29,15 @@ const blogPostSchema = new mongoose.Schema({
 
 const BlogPost = mongoose.model('BlogPost', blogPostSchema);
 
-if (process.env.RESET_DB) {
-  const seedDatabase = async () => {
+const seedDatabase = async () => {
+  if (process.env.RESET_DB === 'true') {
     await BlogPost.deleteMany({});
-    blogData.forEach((item) => new BlogPost(item).save());
+    await BlogPost.insertMany(blogData);
     console.log('Database seeded');
-  };
-  seedDatabase();
-}
+  }
+};
+
+seedDatabase().catch(err => console.error(err));
 
 // Root Endpoint: Provides API documentation
 app.get('/', (req, res) => {
@@ -51,31 +52,49 @@ app.get('/', (req, res) => {
 });
 
 // Endpoint to list all blog posts
-app.get('/api/blogposts', async (req, res) => {
-  const blogPosts = await BlogPost.find();
-  res.json(blogPosts);
+app.get('/api/blogposts', async (req, res, next) => {
+  try {
+    const blogPosts = await BlogPost.find();
+    res.json(blogPosts);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Endpoint to get a single blog post by ID
-app.get('/api/blogposts/:id', async (req, res) => {
-  const blogPost = await BlogPost.findOne({ id: req.params.id });
-  if (blogPost) {
-    res.json(blogPost);
-  } else {
-    res.status(404).json({ error: 'Blog post not found' });
+app.get('/api/blogposts/:id', async (req, res, next) => {
+  try {
+    const blogPost = await BlogPost.findById(req.params.id);
+    if (blogPost) {
+      res.json(blogPost);
+    } else {
+      res.status(404).json({ error: 'Blog post not found' });
+    }
+  } catch (error) {
+    next(error);
   }
 });
 
-// Endpoint to get blog posts by categoryapp.get('/api/blogposts/category/:category', async (req, res) => {
-  const { category } = req.params;
-  const blogPosts = await BlogPost.find({ category });
-  if (blogPosts.length > 0) {
-    res.json(blogPosts);
-  } else {
-    res.status(404).json({ error: 'No blog posts found in this category' });
+// Endpoint to get blog posts by category
+app.get('/api/blogposts/category/:category', async (req, res, next) => {
+  try {
+    const { category } = req.params;
+    const blogPosts = await BlogPost.find({ category: category });
+    if (blogPosts.length > 0) {
+      res.json(blogPosts);
+    } else {
+      res.status(404).json({ error: 'No blog posts found in this category' });
+    }
+  } catch (error) {
+    next(error);
   }
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
