@@ -29,7 +29,7 @@ const blogPostSchema = new mongoose.Schema({
 
 const BlogPost = mongoose.model('BlogPost', blogPostSchema);
 
-if (process.env.SEED_DB) {
+if (process.env.RESET_DB) {
   const seedDatabase = async () => {
     await BlogPost.deleteMany({});
     blogData.forEach((item) => new BlogPost(item).save());
