@@ -45,7 +45,7 @@ app.get('/', (req, res) => {
     message: 'Welcome to the Blog API',
     availableEndpoints: [
       { method: 'GET', path: '/api/blogposts', description: 'Lists all blog posts' },
-      { method: 'GET', path: '/api/blogposts/:id', description: 'Gets a single blog post by ID' },
+      { method: 'GET', path: '/api/blogposts/:_id', description: 'Gets a single blog post by ID' },
       { method: 'GET', path: '/api/blogposts/category/:category', description: 'Gets blog posts by category' },
     ],
   });
@@ -79,7 +79,7 @@ app.get('/api/blogposts/:id', async (req, res, next) => {
 app.get('/api/blogposts/category/:category', async (req, res, next) => {
   try {
     const { category } = req.params;
-    const blogPosts = await BlogPost.find({ category: category });
+    const blogPosts = await BlogPost.find({ category: {$regex: new RegExp(category, 'i')} });
     if (blogPosts.length > 0) {
       res.json(blogPosts);
     } else {
